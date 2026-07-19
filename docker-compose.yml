@@ -11,10 +11,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:52725:8000"
     # ports:
-    #   - "0.0.0.0:52725:8000"
+    #   - "127.0.0.1:52725:8000"
+    ports:
+      - "0.0.0.0:52725:8000"
     healthcheck:
       test:
         [
