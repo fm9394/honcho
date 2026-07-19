@@ -30,7 +30,7 @@ services:
     # -- Development: mount source for live reload --
     volumes:
       - .:/app
-      - venv:/app/.venv
+      - honcho-venv:/app/.venv
     environment:
       - DB_CONNECTION_URI=${DB_CONNECTION_URI}
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -58,7 +58,7 @@ services:
     # -- Development: mount source for live reload --
     volumes:
       - .:/app
-      - venv:/app/.venv
+      - honcho-venv:/app/.venv
     environment:
       - DB_CONNECTION_URI=${DB_CONNECTION_URI}
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -119,6 +119,7 @@ services:
       - honcho
 
 volumes:
+  honcho-redis-data:
   honcho-postgres-data:
   honcho-redis-data:
 
