@@ -119,7 +119,7 @@ services:
       - honcho
 
 volumes:
-  honcho-redis-data:
+  honcho-venv-data:
   honcho-postgres-data:
   honcho-redis-data:
 
