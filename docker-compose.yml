@@ -1,0 +1,129 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["sh", "docker/entrypoint.sh"]
+    container_name: honcho-api
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:52725:8000"
+    # ports:
+    #   - "0.0.0.0:52725:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # -- Development: mount source for live reload --
+    volumes:
+      - .:/app
+      - venv:/app/.venv
+    environment:
+      - DB_CONNECTION_URI=${DB_CONNECTION_URI}
+      - CACHE_URL=redis://redis:6379/0?suppress=true
+      - CACHE_ENABLED=true
+    env_file:
+      - path: .env
+        required: false
+    networks:
+      - honcho
+      - apinetwork
+
+  deriver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/app/.venv/bin/python", "-m", "src.deriver"]
+    container_name: honcho-deriver
+    depends_on:
+      api:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # -- Development: mount source for live reload --
+    volumes:
+      - .:/app
+      - venv:/app/.venv
+    environment:
+      - DB_CONNECTION_URI=${DB_CONNECTION_URI}
+      - CACHE_URL=redis://redis:6379/0?suppress=true
+      - CACHE_ENABLED=true
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
+    networks:
+      - honcho
+
+  database:
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
+    container_name: honcho-pgvector
+    ports:
+      - "127.0.0.1:52722:5432"
+    # ports:
+    #   - "0.0.0.0:52722:5432"
+    command: ["postgres", "-c", "max_connections=200"]
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # Allow passwordless connections from the host (port is bound to 127.0.0.1).
+      # Lets the local test suite and ad-hoc tools connect without supplying a
+      # password. Do NOT use this in production.
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - honcho
+
+
+  redis:
+    image: redis:8.2
+    container_name: honcho-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:52729:6379"
+    # ports:
+    #   - "0.0.0.0:52729:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - honcho
+
+volumes:
+  pgdata:
+  redis-data:
+
+networks:
+  honcho:
+    name: honcho
+  apinetwork:
+    name: apinetwork
