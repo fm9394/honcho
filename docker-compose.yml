@@ -28,9 +28,9 @@ services:
       retries: 5
       start_period: 10s
     # -- Development: mount source for live reload --
-    volumes:
-      - .:/app
-      - honcho-venv:/app/.venv
+    # volumes:
+    #   - .:/app
+    #   - honcho-venv:/app/.venv
     environment:
       - DB_CONNECTION_URI=${DB_CONNECTION_URI}
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -56,9 +56,9 @@ services:
       redis:
         condition: service_healthy
     # -- Development: mount source for live reload --
-    volumes:
-      - .:/app
-      - honcho-venv:/app/.venv
+    # volumes:
+    #   - .:/app
+    #   - honcho-venv:/app/.venv
     environment:
       - DB_CONNECTION_URI=${DB_CONNECTION_URI}
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -119,7 +119,7 @@ services:
       - honcho
 
 volumes:
-  honcho-venv-data:
+  # honcho-venv-data:
   honcho-postgres-data:
   honcho-redis-data:
 
